@@ -26,81 +26,230 @@ class MyApp extends StatelessWidget {
 }
 
 class MyAppState extends ChangeNotifier {
-  var current = WordPair.random();
-
-  void getNext(){                   //added getNext method
+  var current = WordPair.random();  // pick-up random word pair
+  var history = <WordPair>[];
+  GlobalKey? historyListenerKey;
+  void getNext(){ //added getNext method
+    history.insert(0, current);
+    var animatedList=historyListenerKey?.currentState as AnimatedListState?;
+    animatedList?.insertItem(0);
     current=WordPair.random();
     notifyListeners();
   }
-
   var favorites=<WordPair>[]; // here [] is list(empty list)
-  void toggleFavorite(){
-    if(favorites.contains(current)){
-      favorites.remove(current);
+  void toggleFavorite([WordPair? pair]){
+    pair=pair ?? current;
+    if(favorites.contains(pair)){
+      favorites.remove(pair);
     }else{
-      favorites.add(current);
+      favorites.add(pair);
     }
     notifyListeners();
-
   }
+  void removeFavorite(WordPair pair){
+  favorites.remove(pair);
+  notifyListeners();
+}
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  var selectedIndex=0;  // for navigation rail items(home and like)
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
-    var pair=appState.current;
+    var colorScheme=Theme.of(context).colorScheme;
 
-    IconData icon;
-    if (appState.favorites.contains(pair)){
-      icon= Icons.favorite;
-    }else{
-      icon=Icons.favorite_border;
+    Widget page;
+    switch(selectedIndex){
+      case 0:
+      page=GeneratorPage();
+      break;
+      case 1:
+      page=FavoritesPage();
+      break;
+    default:
+    throw UnimplementedError('no weidget for $selectedIndex');
     }
-
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Text('A random AWESOME idea:'),
-            BigCard(pair: pair),
-            SizedBox(height: 10),
-            // Text('UpperCase : '+appState.current.asUpperCase),
-            // Text('LowerCase : '+appState.current.asLowerCase),
-            // Text('CamelCase : '+appState.current.asCamelCase),
-            // Text('PascalCase : '+appState.current.asPascalCase),
-            // Text('SnakeCase : '+appState.current.asSnakeCase),
-            // Text('String : '+appState.current.asString),
-
-            
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-
-                ElevatedButton.icon(
-                  onPressed: (){
-                    appState.toggleFavorite();
-                  }, icon: Icon(icon), label: Text('Like'),),
-                  SizedBox(width: 10),
-                ElevatedButton(onPressed: (){           // Next Button Added
-                  // print('Next Button Pressed');
-                  appState.getNext();
-                },
-                child: Text('Next'), ),
-              ],
-            ),
-            // ElevatedButton(onPressed: (){      // Cancel Button Added
-            //   print('Cancel button pressed');
-            // },
-            // child: Text('Cancel'),
-            // ),
-          ],
+    var mainArea=ColoredBox(
+      color: colorScheme.surfaceVariant,
+      child: AnimatedSwitcher(
+        duration: Duration(milliseconds: 1000),
+        child: page,
         ),
+    );
+
+     return Scaffold(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 450) {
+            return Column(
+              children: [
+                Expanded(child: mainArea),
+                SafeArea(
+                  child: BottomNavigationBar(
+                    items: [
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.home),
+                        label: 'Home',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.favorite),
+                        label: 'Favorites',
+                      ),
+                    ],
+                    currentIndex: selectedIndex,
+                    onTap: (value) {
+                      setState(() {
+                        selectedIndex = value;
+                      });
+                    },
+                  ),
+                )
+              ],
+            );
+          } else {
+            return Row(
+              children: [
+                SafeArea(
+                  child: NavigationRail(
+                    extended: constraints.maxWidth >= 600,
+                    destinations: [
+                      NavigationRailDestination(
+                        icon: Icon(Icons.home),
+                        label: Text('Home'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.favorite),
+                        label: Text('Favorites'),
+                      ),
+                    ],
+                    selectedIndex: selectedIndex,
+                    onDestinationSelected: (value) {
+                      setState(() {
+                        selectedIndex = value;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(child: mainArea),
+              ],
+            );
+          }
+        },
       ),
     );
   }
 }
+class GeneratorPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    var pair = appState.current;
+
+    IconData icon;
+    if (appState.favorites.contains(pair)) {
+      icon = Icons.favorite;
+    } else {
+      icon = Icons.favorite_border;
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 3,
+            child: HistoryListView(),
+          ),
+          SizedBox(height: 10),
+          BigCard(pair: pair),
+          SizedBox(height: 10),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  appState.toggleFavorite();
+                },
+                icon: Icon(icon),
+                label: Text('Like'),
+              ),
+              SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: () {
+                  appState.getNext();
+                },
+                child: Text('Next'),
+              ),
+            ],
+          ),
+          Spacer(flex: 2),
+        ],
+      ),
+    );
+  }
+}
+
+
+// FavoritesPage class starts
+class FavoritesPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var theme = Theme.of(context);
+    var appState = context.watch<MyAppState>();
+
+    if (appState.favorites.isEmpty) {
+      return Center(
+        child: Text('No favorites yet.'),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(30),
+          child: Text('You have '
+              '${appState.favorites.length} favorites:'),
+        ),
+        Expanded(
+          // Make better use of wide windows with a grid.
+          child: GridView(
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 400,
+              childAspectRatio: 400 / 80,
+            ),
+            children: [
+              for (var pair in appState.favorites)
+                ListTile(
+                  leading: IconButton(
+                    icon: Icon(Icons.delete_outline, semanticLabel: 'Delete'),
+                    color: theme.colorScheme.primary,
+                    onPressed: () {
+                      appState.removeFavorite(pair);
+                    },
+                  ),
+                  title: Text(
+                    pair.asLowerCase,
+                    semanticsLabel: pair.asPascalCase,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+// FavoritesPage class ends
+
+
+
+// Bigcard class starts. add a new card as Bigcard
 
 class BigCard extends StatelessWidget {
   const BigCard({
@@ -114,18 +263,73 @@ class BigCard extends StatelessWidget {
   Widget build(BuildContext context) {
     var theme =Theme.of(context);
     var style=theme.textTheme.displayMedium!.copyWith(
-      color: theme.colorScheme.surface,
+      color: theme.colorScheme.onPrimary,
     );
 
     return  Card(
       color: theme.colorScheme.primary,
       child: Padding(
         padding: const EdgeInsets.all(25.0),
-
-        child: Text(pair.asLowerCase,
-         style: style, 
-         semanticsLabel: pair.asPascalCase,),
+        child: AnimatedSize(
+          duration: Duration(milliseconds: 200),
+      
+        child: MergeSemantics(child: Wrap(children: [
+          Text(
+            pair.first,
+            style: style.copyWith(fontWeight: FontWeight.bold),
+          )
+        ],),
+        ),
+        ),
       ),
+    );
+  }
+} // end of Bigcard class
+
+//history view start
+class HistoryListView extends StatefulWidget {
+  const HistoryListView({Key? key}):super(key: key);
+
+  @override
+  State<HistoryListView> createState() => _HistoryListViewState();
+}
+
+class _HistoryListViewState extends State<HistoryListView> {
+  final _key =GlobalKey();
+  static const Gradient _maskingGradient = LinearGradient(
+    colors: [Colors.transparent,Colors.black],
+  stops: [0.0,0.5],
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  );
+  @override
+  Widget build(BuildContext context) {
+    final appState=context.watch<MyAppState>();
+    appState.historyListenerKey=_key;
+
+    return ShaderMask(shaderCallback: (bounds) => _maskingGradient.createShader(bounds),
+    blendMode: BlendMode.dstIn,
+    child: AnimatedList(key: _key,
+    reverse: true,
+    padding: EdgeInsets.only(top: 100),
+    initialItemCount: appState.history.length,
+
+    itemBuilder: (context, index, animation){
+      final pair =appState.history[index];
+      return SizeTransition(sizeFactor: animation,
+      child: Center(child: TextButton.icon(onPressed: (){
+        appState.toggleFavorite(pair);
+      },
+      icon: appState.favorites.contains(pair)? Icon(Icons.favorite,size: 12,)
+      :SizedBox(),
+      label: Text(pair.asLowerCase,
+      semanticsLabel: pair.asPascalCase,
+      ),
+      ),
+      ),
+      );
+    },
+    ),
     );
   }
 }
