@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -17,9 +17,9 @@ class MyApp extends StatelessWidget {
         title: 'Namer App',
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 247, 13, 13)),
         ),
-        home: MyHomePage(),
+        home: const MyHomePage(),
       ),
     );
   }
@@ -31,12 +31,12 @@ class MyAppState extends ChangeNotifier {
   GlobalKey? historyListenerKey;
   void getNext(){ //added getNext method
     history.insert(0, current);
-    var animatedList=historyListenerKey?.currentState as AnimatedListState?;
+    var animatedList = historyListenerKey?.currentState as AnimatedListState?;
     animatedList?.insertItem(0);
     current=WordPair.random();
     notifyListeners();
   }
-  var favorites=<WordPair>[]; // here [] is list(empty list)
+  var favorites = <WordPair>[]; // here [] is list(empty list)
   void toggleFavorite([WordPair? pair]){
     pair=pair ?? current;
     if(favorites.contains(pair)){
@@ -44,7 +44,7 @@ class MyAppState extends ChangeNotifier {
     }else{
       favorites.add(pair);
     }
-    notifyListeners();
+    // notifyListeners();
   }
   void removeFavorite(WordPair pair){
   favorites.remove(pair);
@@ -53,6 +53,8 @@ class MyAppState extends ChangeNotifier {
 }
 
 class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
@@ -66,18 +68,19 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget page;
     switch(selectedIndex){
       case 0:
-      page=GeneratorPage();
+      page=const GeneratorPage();
       break;
       case 1:
-      page=FavoritesPage();
+      page=const FavoritesPage();
       break;
     default:
     throw UnimplementedError('no weidget for $selectedIndex');
-    }
+    } 
+    int millisec=0;
     var mainArea=ColoredBox(
       color: colorScheme.surfaceVariant,
       child: AnimatedSwitcher(
-        duration: Duration(milliseconds: 1000),
+        duration: Duration(milliseconds: millisec),
         child: page,
         ),
     );
@@ -91,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Expanded(child: mainArea),
                 SafeArea(
                   child: BottomNavigationBar(
-                    items: [
+                    items: const [
                       BottomNavigationBarItem(
                         icon: Icon(Icons.home),
                         label: 'Home',
@@ -117,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 SafeArea(
                   child: NavigationRail(
                     extended: constraints.maxWidth >= 600,
-                    destinations: [
+                    destinations: const [
                       NavigationRailDestination(
                         icon: Icon(Icons.home),
                         label: Text('Home'),
@@ -145,6 +148,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 class GeneratorPage extends StatelessWidget {
+  const GeneratorPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -161,13 +166,13 @@ class GeneratorPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
+          const Expanded(
             flex: 3,
             child: HistoryListView(),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           BigCard(pair: pair),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -176,18 +181,18 @@ class GeneratorPage extends StatelessWidget {
                   appState.toggleFavorite();
                 },
                 icon: Icon(icon),
-                label: Text('Like'),
+                label: const Text('Like'),
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               ElevatedButton(
                 onPressed: () {
                   appState.getNext();
                 },
-                child: Text('Next'),
+                child: const Text('Next'),
               ),
             ],
           ),
-          Spacer(flex: 2),
+          const Spacer(flex: 2),
         ],
       ),
     );
@@ -197,13 +202,15 @@ class GeneratorPage extends StatelessWidget {
 
 // FavoritesPage class starts
 class FavoritesPage extends StatelessWidget {
+  const FavoritesPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
     var appState = context.watch<MyAppState>();
 
     if (appState.favorites.isEmpty) {
-      return Center(
+      return const Center(
         child: Text('No favorites yet.'),
       );
     }
@@ -219,7 +226,7 @@ class FavoritesPage extends StatelessWidget {
         Expanded(
           // Make better use of wide windows with a grid.
           child: GridView(
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 400,
               childAspectRatio: 400 / 80,
             ),
@@ -227,7 +234,7 @@ class FavoritesPage extends StatelessWidget {
               for (var pair in appState.favorites)
                 ListTile(
                   leading: IconButton(
-                    icon: Icon(Icons.delete_outline, semanticLabel: 'Delete'),
+                    icon: const Icon(Icons.delete_outline, semanticLabel: 'Delete'),
                     color: theme.colorScheme.primary,
                     onPressed: () {
                       appState.removeFavorite(pair);
@@ -271,13 +278,17 @@ class BigCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(25.0),
         child: AnimatedSize(
-          duration: Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 200),
       
-        child: MergeSemantics(child: Wrap(children: [
+        child: MergeSemantics(
+          child: Wrap(
+            children: [
           Text(
             pair.first,
-            style: style.copyWith(fontWeight: FontWeight.bold),
-          )
+            style: style.copyWith(fontWeight: FontWeight.w200),
+          ),
+          Text(pair.second,
+          style: style.copyWith(fontWeight: FontWeight.bold),)
         ],),
         ),
         ),
@@ -285,8 +296,6 @@ class BigCard extends StatelessWidget {
     );
   }
 } // end of Bigcard class
-
-//history view start
 class HistoryListView extends StatefulWidget {
   const HistoryListView({Key? key}):super(key: key);
 
@@ -311,7 +320,7 @@ class _HistoryListViewState extends State<HistoryListView> {
     blendMode: BlendMode.dstIn,
     child: AnimatedList(key: _key,
     reverse: true,
-    padding: EdgeInsets.only(top: 100),
+    padding: const EdgeInsets.only(top: 100),
     initialItemCount: appState.history.length,
 
     itemBuilder: (context, index, animation){
@@ -320,8 +329,8 @@ class _HistoryListViewState extends State<HistoryListView> {
       child: Center(child: TextButton.icon(onPressed: (){
         appState.toggleFavorite(pair);
       },
-      icon: appState.favorites.contains(pair)? Icon(Icons.favorite,size: 12,)
-      :SizedBox(),
+      icon: appState.favorites.contains(pair)? const Icon(Icons.favorite,size: 12,)
+      :const SizedBox(),
       label: Text(pair.asLowerCase,
       semanticsLabel: pair.asPascalCase,
       ),
